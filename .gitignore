@@ -18,3 +18,4 @@ cmd/wails/wails
 tmp
 node_modules/
 .vscode
+.idea
