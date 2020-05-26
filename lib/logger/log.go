@@ -2,6 +2,8 @@ package logger
 
 import (
 	"os"
+	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -44,4 +46,17 @@ func SetLogLevel(level string) {
 		GlobalLogger.SetLevel(logrus.DebugLevel)
 		GlobalLogger.Warnf("Log level '%s' not recognised. Setting to Debug.", level)
 	}
+}
+
+func PrintStack() string{
+	var pcs  = make([]uintptr,240)
+	n:=runtime.Callers(2,pcs)
+	str:="\nstack:\n"
+	for i :=0;i<n;i++{
+		Func:=runtime.FuncForPC(pcs[i])
+		file,line:=Func.FileLine(pcs[i])
+
+		str+="\t"+file +" "+Func.Name()+", line "+ strconv.Itoa(line)+"\n"
+	}
+	return str
 }
