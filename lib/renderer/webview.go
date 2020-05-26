@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-playground/colors"
-	"github.com/leaanthony/mewn"
 	"github.com/Felamande/wails/lib/interfaces"
 	"github.com/Felamande/wails/lib/logger"
 	"github.com/Felamande/wails/lib/messages"
 	wv "github.com/Felamande/wails/lib/renderer/webview"
+	"github.com/go-playground/colors"
+	"github.com/leaanthony/mewn"
 )
 
 // WebView defines the main webview application window

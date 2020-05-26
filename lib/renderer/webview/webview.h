@@ -567,7 +567,7 @@ struct webview_priv
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "imm32.lib")
 
-#define WM_WEBVIEW_DISPATCH (WM_APP + 1)
+#include <stdio.h>
 
   static inline wchar_t *webview_to_utf16(const char *s)
   {
@@ -593,6 +593,26 @@ struct webview_priv
     return s;
   }
 
+  static struct webview *glbW;
+
+   jsValue JS_CALL jsInvokeCb(jsExecState es){
+    
+     const char *message = jsToString(es, jsArg(es, 0));
+     printf("invoke function msg:%s\n",message);
+     glbW->external_invoke_cb(glbW, message);
+     return jsUndefined();
+  }
+   void WKE_CALL_TYPE onDidCreateScriptContextCallback(wkeWebView window, void *param, wkeWebFrameHandle frameId, void *context, int extensionGroup, int worldId)
+{
+    //只有main frame才初始化
+    if (wkeWebFrameGetMainFrame(window) == frameId)
+    {
+        wkeRunJS(window,"window.external={invoke:function(x){exinvoke(x)}}");
+        wkeRunJS(window,"try{alert(exinvoke)}catch(e){alert(e)}");
+    }
+}
+
+
   WEBVIEW_API int webview_init(struct webview *w)
   {
     const wkeSettings *settings = ((wkeSettings *)0);
@@ -607,11 +627,17 @@ struct webview_priv
       WKE_FOR_EACH_DEFINE_FUNCTION(WKE_GET_PTR_ITERATOR0, WKE_GET_PTR_ITERATOR1, WKE_GET_PTR_ITERATOR2, WKE_GET_PTR_ITERATOR3,
                                    WKE_GET_PTR_ITERATOR4, WKE_GET_PTR_ITERATOR5, WKE_GET_PTR_ITERATOR6, WKE_GET_PTR_ITERATOR11);
     }
+    
+    jsBindFunction("exinvoke",jsInvokeCb,1);
+
     w->priv.webview = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, 0, 0, w->width, w->height);
     wkeSetWindowTitleW(w->priv.webview, webview_to_utf16(w->title));
     w->priv.width = w->width;
     w->priv.height = w->height;
     w->priv.resizable = w->resizable;
+
+    glbW = w;
+    wkeOnDidCreateScriptContext(w->priv.webview, onDidCreateScriptContextCallback, NULL);
 
     wkeLoadHTML(w->priv.webview, w->url);
     wkeShowWindow(w->priv.webview, true);
@@ -625,22 +651,32 @@ struct webview_priv
 
   WEBVIEW_API int webview_loop(struct webview *w, int blocking)
   {
-    MSG msg = {0};
-    while (GetMessageW(&msg, NULL, 0, 0))
-    {
+      MSG msg = {0};
+          if (blocking)
+          {
+            GetMessage(&msg, 0, 0, 0);
+          }
+          else
+          {
+            PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
+          }
       TranslateMessage(&msg);
       DispatchMessageW(&msg);
-    }
+      return 0;
   }
 
   WEBVIEW_API int webview_eval(struct webview *w, const char *js)
   {
+    // printf("thread %d run js %s\n",js,(int)GetCurrentThreadId());
+    wkeRunJS(w->priv.webview,js);
     return 0;
   }
 
   WEBVIEW_API void webview_dispatch(struct webview *w, webview_dispatch_fn fn,
                                     void *arg){
-      fn(w, arg);}
+      // printf("thread %d webview_dispatch => webview_dispatch_fn(_webview_dispatch_cb)\n",(int)GetCurrentThreadId());                  
+      fn(w, arg);
+    }
 
   WEBVIEW_API void webview_set_title(struct webview *w, const char *title)
   {
@@ -670,8 +706,9 @@ struct webview_priv
   WEBVIEW_API void webview_terminate(struct webview *w)
   {
     wkeShutdown(w);
+    exit(0);
   }
-  WEBVIEW_API void webview_exit(struct webview *w) { (void)w; }
+  WEBVIEW_API void webview_exit(struct webview *w) { (void)w; exit(0);}
 
 #endif /* WEBVIEW_MNBLINK */
 
@@ -680,6 +717,7 @@ struct webview_priv
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "oleaut32.lib")
+
 
 #define WM_WEBVIEW_DISPATCH (WM_APP + 1)
 
@@ -1584,7 +1622,7 @@ struct webview_priv
     }
 
     SetWindowLongPtr(w->priv.hwnd, GWLP_USERDATA, (LONG_PTR)w);
-
+    
     DisplayHTMLPage(w);
 
 #ifdef UNICODE

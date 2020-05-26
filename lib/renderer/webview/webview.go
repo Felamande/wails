@@ -14,6 +14,7 @@ package webview
 #cgo linux openbsd freebsd pkg-config: gtk+-3.0 webkit2gtk-4.0
 
 #cgo windows CFLAGS: -DWEBVIEW_MNBLINK=1
+//#cgo windows CFLAGS: -DWEBVIEW_WINAPI=1 -std=c99
 #cgo windows LDFLAGS: -lole32 -lcomctl32 -loleaut32 -luuid -lgdi32
 
 #cgo darwin CFLAGS: -DWEBVIEW_COCOA=1 -x objective-c
@@ -342,30 +343,4 @@ func (w *webview) InjectCSS(css string) {
 
 func (w *webview) Terminate() {
 	C.CgoWebViewTerminate(w.w)
-}
-
-//export _webviewDispatchGoCallback
-func _webviewDispatchGoCallback(index unsafe.Pointer) {
-	var f func()
-	m.Lock()
-	f = fns[uintptr(index)]
-	delete(fns, uintptr(index))
-	m.Unlock()
-	f()
-}
-
-//export _webviewExternalInvokeCallback
-func _webviewExternalInvokeCallback(w unsafe.Pointer, data unsafe.Pointer) {
-	m.Lock()
-	var (
-		cb ExternalInvokeCallbackFunc
-		wv WebView
-	)
-	for wv, cb = range cbs {
-		if wv.(*webview).w == w {
-			break
-		}
-	}
-	m.Unlock()
-	cb(wv, C.GoString((*C.char)(data)))
 }
