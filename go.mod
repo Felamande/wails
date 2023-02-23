@@ -17,9 +17,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.4.1
 	github.com/syossan27/tebata v0.0.0-20180602121909-b283fe4bc5ba
-	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2 // indirect
-	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
-	golang.org/x/text v0.3.0
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
+	golang.org/x/text v0.3.8
 	gopkg.in/AlecAivazis/survey.v1 v1.8.4
 	gopkg.in/yaml.v3 v3.0.0-20190709130402-674ba3eaed22
 )
